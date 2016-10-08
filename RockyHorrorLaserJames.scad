@@ -26,10 +26,16 @@ BedHeight = 275;
 BedWidth = 298;
 
 True = 1;
-
 False = 0;
 
 AttachPointLength = 30;
+
+PinHeight = 10;
+PinWidth = 3;
+RemoveOffset = 1;
+HeightOffset = .8;
+
+BodyTranslation = BodyLength/2-10;
 
 
 module CurvedAdapter()
@@ -366,7 +372,7 @@ module SideBody()
                     TopPiece();
         }
 }
-module LeftSideBody ()
+module LeftSideBody()
 {
     rotate (a=90, v=[0,1,0])
     {
@@ -382,7 +388,7 @@ module LeftSideBody ()
         }
     }
 }
-module RightSideBody ()
+module RightSideBody()
 {
     rotate (a=90, v=[0,-1,0])
     {
@@ -518,13 +524,197 @@ module TineCurvePeices()
             cube ([BedWidth,BedHeight,20]);
     }
 }
+
+module AlignmentPin(remove)
+{
+    x=.7;
+    if(remove)
+        cube([PinWidth+RemoveOffset, PinWidth+RemoveOffset, PinHeight+HeightOffset]);
+    else
+    {
+        difference()
+        {
+            cube([PinWidth, PinWidth, PinHeight]);
+            
+            union()
+            {
+                translate ([-2.1312-x,-x,-.5])
+                    rotate (a=45, v=[0,0,-1])
+                        cube([3,3,11]);
+                
+                translate ([-2.1213+3+x,-x,-.5])
+                    rotate (a=45, v=[0,0,-1])
+                        cube([3,3,11]);
+                
+                translate ([-2.1312-x,3+x,-.5])
+                    rotate (a=45, v=[0,0,-1])
+                        cube([3,3,11]);
+                
+                translate ([-2.1213+3+x,3+x,-.5])
+                    rotate (a=45, v=[0,0,-1])
+                        cube([3,3,11]);
+            }
+        }
+    }
+}
+
+module PinnedCurves()
+{
+    difference()
+    {
+        TineCurves();
+        
+        union()
+        {
+            //alignment pin for left curve along x axis
+            translate([-TineCurveBasis+5,-(PinWidth/2),-(PinHeight/2)])
+                AlignmentPin(True);
+            //alignment pin for left curve along y axis
+            translate([-(TineCurveBasis+TineCurveRadius),(TineCurveRadius*.60),-(PinHeight+HeightOffset)/2])
+                AlignmentPin(True);
+            //Alignment pin for right curve along x axis 
+            translate([TineCurveBasis-5,-(PinWidth/2),-(PinHeight/2)])
+                AlignmentPin(True);
+            //Alignment pin for right curve along y axis
+            translate([(TineCurveBasis+TineCurveRadius)-PinWidth,(TineCurveRadius*.60),-(PinHeight+HeightOffset)/2])
+                AlignmentPin(True);
+        }
+    }
+}
+
+module PinnedCurvePieces()
+{
+    intersection()
+    {
+        translate ([0,-50,-.01])
+            union()
+            {
+                PinnedCurves();
+            
+                translate ([0,100,0])
+                    rotate (a=180, v=[1,0,0])
+                        PinnedCurves();
+            }   
+        
+        translate ([-BedWidth/2,-BedHeight/2, 0])
+            cube ([BedWidth,BedHeight,20]);
+    }
+}
+
+module PinGroup()
+{
+    for (x = [-50 : 6 : 50])
+        rotate (a=90,v=[1,0,0])
+            translate ([x,0,0])
+                AlignmentPin(False);
+}
+
+module PinnedTine()
+{
+    difference()
+    {
+        Tine(0, True);
+        
+        union()
+        {
+            translate([-(PinWidth+RemoveOffset)/2, -(PinWidth+RemoveOffset)/2, -(PinHeight+HeightOffset)/2])
+                AlignmentPin(True);
+            
+            translate([-75, -(PinWidth+RemoveOffset)/2, -(PinHeight+HeightOffset)/2])
+                AlignmentPin(True);
+        }
+    }
+}
+module PinnedTines()
+{
+    difference()
+    {
+        union()
+        {   
+            translate([0,-20,-0.01])
+                rotate(a=180, v=[1,0,0])
+                    PinnedTine(0,True);
+            translate([0,20,0])
+                PinnedTine(0,0);
+        }
+        translate([-(TineLength+20)/2       ,-(TineLength+20)/2,-15])
+            cube ([TineLength+20,          TineLength+20,15]);
+    }
+}
+
+module PinnedSideBody()
+{
+    difference()
+    {
+        SideBody();
+        
+        union()
+        {
+            //Alignment Pin for Rear Ball
+            translate([-(PinHeight/2+HeightOffset),-(BodyLength-BodyTranslation+SphereHeight+PinWidth),PinWidth/2])
+                rotate(a=90, v=[0,1,0])
+                    AlignmentPin(True);
+            
+            //Alignment Pin for bottom Ball
+            translate([-(PinHeight/2+HeightOffset),-23,-116])
+                rotate(a=90, v=[0,1,0])
+                    AlignmentPin(True);
+            
+            //Alignment Pin for Top Ball
+            translate([-(PinHeight/2+HeightOffset), 30, 72])
+                rotate (a=90, v=[0,1,0])
+                    AlignmentPin(True);
+            
+            //Alignment Pin for Handle
+            translate([-(PinHeight/2+HeightOffset),7,PinWidth/2])
+                rotate(a=90, v=[0,1,0])
+                    AlignmentPin(True);
+            
+            //Alignment Pin for Attachment Joint
+            translate([-(PinHeight/2+HeightOffset),(BodyTranslation-PinWidth/2),PinWidth/2])
+                rotate(a=90, v=[0,1,0])
+                    AlignmentPin(True);
+        }
+    }
+}
+
+module PinnedLeftSideBody()
+{
+    rotate (a=90, v=[0,1,0])
+    {
+        difference()
+        {
+            PinnedSideBody ();
+    
+            height = 275;
+            width = 298;
+    
+            translate ([-.01,-height/2,-(width/2)])
+                cube ([100,height,width]);
+        }
+    }
+}
+module PinnedRightSideBody()
+{
+    rotate (a=90, v=[0,-1,0])
+    {
+        difference()
+        {
+        PinnedSideBody ();
+    
+        translate ([-100,-BedHeight/2, -BedWidth/2])
+            cube ([100,BedHeight,BedWidth]);
+        }
+    }
+}
+    
 //TwoTopPieces();
  
 //CurvedAdapter();
 
 //Tine();
 
-Tines();
+//Tines();
 
 //GunBasePeice();
 
@@ -541,3 +731,21 @@ Tines();
 //TineCurves();
 
 //TineCurvePeices();
+
+//AlignmentPin(False);
+
+//PinnedCurves();
+
+//PinnedCurvePieces();
+
+//PinGroup();
+
+//PinnedTine();
+
+//PinnedTines();
+
+//PinnedSideBody();
+
+//PinnedLeftSideBody();
+
+//PinnedRightSideBody();
